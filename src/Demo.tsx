@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Quill, { RangeStatic } from "quill";
+import Quill, { RangeStatic, StringMap } from "quill";
 import Delta from "quill-delta";
 import { Button, Space } from "@yangwch/y-components";
 import "@yangwch/y-components/dist/umd/main.css";
@@ -47,6 +47,7 @@ function Demo() {
       editor.on("text-change", () =>
         setLength(editor.getText().replace(/[\n\r]/g, "").length),
       );
+      // 用于标记是否触发了选择项变化事件，方向键处理时需要
       let triggeredChange = false;
       editor.on("selection-change", range => {
         console.warn("selection-change", range);
@@ -62,17 +63,21 @@ function Demo() {
         }
       });
 
-      const clearFormat = () => {
+      // 重新设置格式
+      const resetFormat = (newFormat?: StringMap) => {
         const range = editor.getSelection();
         if (!range) return;
         const formats = editor.getFormat(range.index, 0);
         if (formats) {
-          // editor.removeFormat(range.index, 0, 'user');
           Object.keys(formats).forEach(function (name) {
             // Clean functionality in existing apps only clean inline formats
             editor.format(name, false);
           });
-          // editor.formatText(range.index, 0, formats);
+        }
+        if (newFormat) {
+          Object.keys(newFormat).forEach(function (name) {
+            editor.format(name, newFormat[name]);
+          });
         }
       };
       editor.keyboard.addBinding({ key: "right" }, function (range, context) {
@@ -83,8 +88,9 @@ function Demo() {
             if (formats) {
               const nextFormat = editor.getFormat(range.index, 1);
               if (formats.code) {
-                if (!nextFormat.code) {
-                  clearFormat();
+                if (!nextFormat.code && triggeredChange) {
+                  resetFormat(nextFormat);
+                  triggeredChange = false;
                   return false;
                 }
               } else {
@@ -115,8 +121,8 @@ function Demo() {
         console.log("ArrowLeft", range, context);
         try {
           if (range.length === 0) {
+            const isCode = isCodeFormat(range);
             if (range.index > 0) {
-              const isCode = isCodeFormat(range);
               if (!isCode) {
                 const prevIsCode = isCodeFormat({
                   index: range.index - 1,
@@ -129,12 +135,26 @@ function Demo() {
                 }
               }
             }
-            // 如果在最左侧，清空格式
-            if (range.index === 0) {
-              clearFormat();
-            }
-            // if (range.index > 1) {
+            // 如果在最左侧，清空格式[暂不处理：重置格式后，输入的第1个字符会出现的光标的右侧]
+            // if (range.index === 0 && isCode) {
+            //   resetFormat();
             // }
+            // 处理从代码块右侧的文字，按ArrowLeft，将光标切换到代码块右侧时，让光标出现在代码块外
+            if (range.index > 1) {
+              const format = editor.getFormat(range.index - 1, 1);
+              if (!format.code) {
+                const leftIsCode = isCodeFormat({
+                  index: range.index - 2,
+                  length: 1,
+                });
+                // 自己设置选区
+                if (leftIsCode) {
+                  editor.setSelection({ index: range.index - 1, length: 0 });
+                  resetFormat(format);
+                  return false;
+                }
+              }
+            }
           }
         } catch (err) {
           console.warn("arrowLeft error", err);
@@ -238,7 +258,8 @@ function Demo() {
       <div id="toolbar"></div>
       <div ref={ref}>
         <code>Quill:</code>由于这些限制，<code>Quill</code>
-        无法支持任意的DOM树和HTML更改。但正如我们将看到的，这种结构提供的一致性和可预测性使我们能够轻松构建丰富的编辑体验。
+        <s>无法</s>
+        支持任意的DOM树和HTML更改。但正如我们将看到的，这种结构提供的一致性和可预测性使我们能够轻松构建丰富的编辑体验。
       </div>
       <div>字符数：{length}</div>
       <div>选中项：{JSON.stringify(range)}</div>
