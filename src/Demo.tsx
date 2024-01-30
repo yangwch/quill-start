@@ -49,14 +49,16 @@ function Demo() {
       );
       let triggeredChange = false;
       editor.on("selection-change", range => {
-        console.warn('selection-change', range)
-        triggeredChange = true
+        console.warn("selection-change", range);
+        triggeredChange = true;
         setRange(range);
-        setBounds(editor.getBounds(range.index, range.length));
-        if (range.length === 0) {
-          const leaf = editor.getLine(range.index);
-          console.log("leaf", leaf);
-          editor.getFormat(range.index, 1);
+        if (range) {
+          setBounds(editor.getBounds(range.index, range.length));
+          if (range.length === 0) {
+            const leaf = editor.getLine(range.index);
+            console.log("leaf", leaf);
+            editor.getFormat(range.index, 1);
+          }
         }
       });
 
@@ -89,7 +91,7 @@ function Demo() {
                 // 在code代码块的最左侧，取不到格式code:true
                 // 所以判断是否选中项有变化，如果选中项变化过，重新设置临界位置的格式
                 if (nextFormat.code && triggeredChange) {
-                  editor.format("code", true, 'user');
+                  editor.format("code", true, "user");
                   triggeredChange = false;
                   return false;
                 }
@@ -101,20 +103,38 @@ function Demo() {
         }
         return true;
       });
+
+      const isCodeFormat = (range: RangeStatic) => {
+        const formats = editor.getFormat(range);
+        if (formats) {
+          return !!formats.code;
+        }
+        return false;
+      };
       editor.keyboard.addBinding({ key: "left" }, function (range, context) {
         console.log("ArrowLeft", range, context);
         try {
-          if (range.length === 0 && range.index > 0) {
-            const formats = editor.getFormat(range);
-            if (formats) {
-              if (!formats.code) {
-                const prevFormat = editor.getFormat(range.index - 1, 1);
-                if (prevFormat.code) {
+          if (range.length === 0) {
+            if (range.index > 0) {
+              const isCode = isCodeFormat(range);
+              if (!isCode) {
+                const prevIsCode = isCodeFormat({
+                  index: range.index - 1,
+                  length: 1,
+                });
+
+                if (prevIsCode) {
                   editor.format("code", true);
                   return false;
                 }
               }
             }
+            // 如果在最左侧，清空格式
+            if (range.index === 0) {
+              clearFormat();
+            }
+            // if (range.index > 1) {
+            // }
           }
         } catch (err) {
           console.warn("arrowLeft error", err);
@@ -217,7 +237,7 @@ function Demo() {
       </Space>
       <div id="toolbar"></div>
       <div ref={ref}>
-        由于这些限制，<code>Quill</code>
+        <code>Quill:</code>由于这些限制，<code>Quill</code>
         无法支持任意的DOM树和HTML更改。但正如我们将看到的，这种结构提供的一致性和可预测性使我们能够轻松构建丰富的编辑体验。
       </div>
       <div>字符数：{length}</div>
