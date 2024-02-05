@@ -1,269 +1,98 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import Quill, { RangeStatic, StringMap } from "quill";
-import Delta from "quill-delta";
-import { Button, Space } from "@yangwch/y-components";
-import "@yangwch/y-components/dist/umd/main.css";
+import styled from "styled-components";
 import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
+import BubbleTool from "./BubbleTool";
+import useEditor from "./hooks/useEditor";
+import { MouseEvent, useCallback } from "react";
+
+const EditorWrapper = styled.div`
+  position: relative;
+`;
+
+const BubbleWrapper = styled.div`
+  position: absolute;
+  background: #878383;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+  padding: 5px 10px;
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 10px;
+  color: #fff;
+  &.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .yc-divider-vertical {
+    border-color: #fff;
+  }
+`;
 
 function Demo() {
-  const ref = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<Quill | null>(null);
-  const [length, setLength] = useState(0);
-  const [range, setRange] = useState<RangeStatic | null>(null);
-  const [bounds, setBounds] = useState<any>(null);
-  useEffect(() => {
-    var toolbarOptions = [
-      ["bold", "italic", "underline", "strike", "code"], // toggled buttons
-      // ["blockquote", "code-block"],
-
-      // [{ header: 1 }, { header: 2 }], // custom button values
-      // [{ list: "ordered" }, { list: "bullet" }],
-      // [{ script: "sub" }, { script: "super" }], // superscript/subscript
-      // [{ indent: "-1" }, { indent: "+1" }], // outdent/indent
-      // [{ direction: "rtl" }], // text direction
-
-      // [{ size: ["small", false, "large", "huge"] }], // custom dropdown
-      // [{ header: [1, 2, 3, 4, 5, 6, false] }],
-
-      // [{ color: [] }, { background: [] }], // dropdown with defaults from theme
-      // [{ font: [] }],
-      // [{ align: [] }],
-
-      ["clean"],
-    ];
-
-    if (ref.current && !editorRef.current) {
-      var options = {
-        debug: "info",
-        modules: {
-          toolbar: toolbarOptions,
-        },
-        placeholder: "点击输入...",
-        theme: "snow",
-        inline: true,
-      };
-      const editor = new Quill(ref.current, options);
-      editor.on("text-change", () =>
-        setLength(editor.getText().replace(/[\n\r]/g, "").length),
-      );
-      // 用于标记是否触发了选择项变化事件，方向键处理时需要
-      let triggeredChange = false;
-      editor.on("selection-change", range => {
-        console.warn("selection-change", range);
-        triggeredChange = true;
-        setRange(range);
-        if (range) {
-          setBounds(editor.getBounds(range.index, range.length));
-          if (range.length === 0) {
-            const leaf = editor.getLine(range.index);
-            console.log("leaf", leaf);
-            editor.getFormat(range.index, 1);
-          }
-        }
-      });
-
-      // 重新设置格式
-      const resetFormat = (newFormat?: StringMap) => {
-        const range = editor.getSelection();
-        if (!range) return;
-        const formats = editor.getFormat(range.index, 0);
-        if (formats) {
-          Object.keys(formats).forEach(function (name) {
-            // Clean functionality in existing apps only clean inline formats
-            editor.format(name, false);
-          });
-        }
-        if (newFormat) {
-          Object.keys(newFormat).forEach(function (name) {
-            editor.format(name, newFormat[name]);
-          });
-        }
-      };
-      editor.keyboard.addBinding({ key: "right" }, function (range, context) {
-        console.log("ArrowRight", range, context);
-        try {
-          if (range.length === 0 && range.index > 0) {
-            const formats = editor.getFormat(range);
-            if (formats) {
-              const nextFormat = editor.getFormat(range.index, 1);
-              if (formats.code) {
-                if (!nextFormat.code && triggeredChange) {
-                  resetFormat(nextFormat);
-                  triggeredChange = false;
-                  return false;
-                }
-              } else {
-                // 在code代码块的最左侧，取不到格式code:true
-                // 所以判断是否选中项有变化，如果选中项变化过，重新设置临界位置的格式
-                if (nextFormat.code && triggeredChange) {
-                  editor.format("code", true, "user");
-                  triggeredChange = false;
-                  return false;
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.warn("arrowRight error", err);
-        }
-        return true;
-      });
-
-      const isCodeFormat = (range: RangeStatic) => {
-        const formats = editor.getFormat(range);
-        if (formats) {
-          return !!formats.code;
-        }
-        return false;
-      };
-      editor.keyboard.addBinding({ key: "left" }, function (range, context) {
-        console.log("ArrowLeft", range, context);
-        try {
-          if (range.length === 0) {
-            const isCode = isCodeFormat(range);
-            if (range.index > 0) {
-              if (!isCode) {
-                const prevIsCode = isCodeFormat({
-                  index: range.index - 1,
-                  length: 1,
-                });
-
-                if (prevIsCode) {
-                  editor.format("code", true);
-                  return false;
-                }
-              }
-            }
-            // 如果在最左侧，清空格式[暂不处理：重置格式后，输入的第1个字符会出现的光标的右侧]
-            // if (range.index === 0 && isCode) {
-            //   resetFormat();
-            // }
-            // 处理从代码块右侧的文字，按ArrowLeft，将光标切换到代码块右侧时，让光标出现在代码块外
-            if (range.index > 1) {
-              const format = editor.getFormat(range.index - 1, 1);
-              if (!format.code) {
-                const leftIsCode = isCodeFormat({
-                  index: range.index - 2,
-                  length: 1,
-                });
-                // 自己设置选区
-                if (leftIsCode) {
-                  editor.setSelection({ index: range.index - 1, length: 0 });
-                  resetFormat(format);
-                  return false;
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.warn("arrowLeft error", err);
-        }
-        return true;
-      });
-      editorRef.current = editor;
-      // @ts-ignore
-      window.editor = editor;
-    }
-  }, []);
-
-  const setContent = useCallback(() => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.setContents([
-        {
-          insert: "Hello Quill!",
-          attributes: {
-            bold: true,
-          },
-        },
-      ] as any);
-    }
-  }, []);
-
-  const insertText = useCallback(() => {
-    if (editorRef.current) {
-      const selection = editorRef.current.getSelection();
-      editorRef.current.insertText(selection?.index || 0, "Hello Quill!", {
-        bold: true,
-        italic: true,
-        underline: true,
-        strike: true,
-        color: "red",
-      });
-    }
-  }, []);
-  const updateContents = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.updateContents(
-        new Delta()
-          .retain(6)
-          .delete(5)
-          .insert("World")
-          .retain(1, { fontSize: "30px", color: "green" }),
-      );
-    }
-  }, []);
-  const setColor = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.format("color", "red");
-    }
-  }, []);
-  const setAlign = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.format("align", "right");
-    }
-  }, []);
-  const formatText = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.formatText(range?.index || 0, range?.length || 0, {
-        color: "red",
-        bold: true,
-        italic: true,
-        underline: true,
-        strike: true,
-        size: "large",
-      });
-    }
-  }, [range?.index, range?.length]);
-  const getFormat = useCallback(() => {
-    if (editorRef.current) {
-      alert(JSON.stringify(editorRef.current.getFormat()));
-    }
-  }, []);
-  const setSelection = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.setSelection(0, 7);
-    }
-  }, []);
+  const { ref, bubbleState, bubbleRef, getSelectedText } = useEditor();
+  const onImprove = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault()
+      console.warn("onImprove", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onContinue = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onContinue", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onTranslate = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onTranslate", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onSimplify = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onSimplify", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onExpand = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onExpand", getSelectedText());
+    },
+    [getSelectedText],
+  );
   return (
-    <div>
-      <Space wrap>
-        <Button
-          onClick={() => {
-            console.log(editorRef.current?.getContents());
+    <div style={{ boxShadow: "0 0 10px 0 rgba(0,0,0,0.1)" }}>
+      <div id="toolbar">
+        <button className="ql-bold"></button>
+        <button className="ql-script" value="sub"></button>
+        <button className="ql-script" value="super"></button>
+        <button className="ql-code"></button>
+      </div>
+      <EditorWrapper>
+        <div ref={ref}>
+          小糖果是一家本地制造糖果的公司，我们使用全天然原料，无污染，不添加防腐剂。自成立以来，我们致力于提供健康、美味的糖果产品。我们的生产过程严格遵循高品质标准，确保每一颗小糖果都能给消费者带来纯正的口感和愉悦的体验。无论是作为休闲零食还是礼物赠送，小糖果都是您最佳的选择。我们始终关注环境保护和可持续发展，在生产过程中尽可能降低对环境的影响。通过与当地农民和供应商合作，我们确保使用优质的原材料，并为当地经济做出贡献。选择小糖果，您将在享受美味同时也支持健康和可持续发展。
+        </div>
+        <BubbleWrapper
+          ref={bubbleRef}
+          className={bubbleState.visible ? "visible" : ""}
+          style={{
+            left: bubbleState.x,
+            top: bubbleState.y,
           }}
         >
-          Get Contents
-        </Button>
-        <Button onClick={setContent}>Set Text</Button>
-        <Button onClick={insertText}>Insert Text</Button>
-        <Button onClick={updateContents}>Update Contents</Button>
-        <Button onClick={setColor}>Set Color</Button>
-        <Button onClick={setAlign}>Align Right</Button>
-        <Button onClick={formatText}>Format Text</Button>
-        <Button onClick={getFormat}>Get Format</Button>
-        <Button onClick={setSelection}>Set Selection</Button>
-      </Space>
-      <div id="toolbar"></div>
-      <div ref={ref}>
-        <code>Quill:</code>由于这些限制，<code>Quill</code>
-        <s>无法</s>
-        支持任意的DOM树和HTML更改。但正如我们将看到的，这种结构提供的一致性和可预测性使我们能够轻松构建丰富的编辑体验。
-      </div>
-      <div>字符数：{length}</div>
-      <div>选中项：{JSON.stringify(range)}</div>
-      <div>选中范围：{JSON.stringify(bounds)}</div>
+          <BubbleTool
+            onImprove={onImprove}
+            onContinue={onContinue}
+            onTranslate={onTranslate}
+            onSimplify={onSimplify}
+            onExpand={onExpand}
+          />
+        </BubbleWrapper>
+      </EditorWrapper>
     </div>
   );
 }
