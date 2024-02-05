@@ -33,8 +33,8 @@ function Demo() {
       let triggeredChange = false;
       // 重新设置格式
       const resetFormat = (newFormat?: any) => {
-        const editor = editorRef.current
-        if (!editor) return
+        const editor = editorRef.current;
+        if (!editor) return;
         const range = editor.getSelection();
         if (!range) return;
         const formats = editor.getFormat(range.index, 0);
@@ -51,8 +51,8 @@ function Demo() {
         }
       };
       const onArrowRight = (range: any, context: any) => {
-        const editor = editorRef.current
-        if (!editor) return
+        const editor = editorRef.current;
+        if (!editor) return;
         console.log("ArrowRight", range, context);
         try {
           if (range.length === 0 && range.index > 0) {
@@ -83,8 +83,8 @@ function Demo() {
       };
 
       const isCodeFormat = (range: any) => {
-        const editor = editorRef.current
-        if (!editor) return
+        const editor = editorRef.current;
+        if (!editor) return;
         const formats = editor.getFormat(range);
         if (formats) {
           return !!formats.code;
@@ -92,8 +92,8 @@ function Demo() {
         return false;
       };
       const onArrowLeft = (range: any, context: any) => {
-        const editor = editorRef.current
-        if (!editor) return
+        const editor = editorRef.current;
+        if (!editor) return;
         console.log("ArrowLeft", range, context);
         try {
           if (range.length === 0) {
@@ -170,12 +170,12 @@ function Demo() {
     }
   }, []);
 
-
   return (
     <div>
       <div id="toolbar"></div>
       <div ref={ref}>
-        <code>Quill:</code>由于这些限制，<code>Quill</code>
+        当前使用了<code>Quill:2.0.0-beta.2</code>，
+        <code>Quill</code>
         <s>无法</s>
         支持任意的DOM树和HTML更改。但正如我们将看到的，这种结构提供的一致性和可预测性使我们能够轻松构建丰富的编辑体验。
       </div>
