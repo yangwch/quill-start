@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import Quill, { RangeStatic, StringMap } from "quill";
-import Delta from "quill-delta";
-import { Button, Space } from "@yangwch/y-components";
+import { useEffect, useRef } from "react";
+import Quill from "quill";
 import "@yangwch/y-components/dist/umd/main.css";
 import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
@@ -9,9 +7,6 @@ import "quill/dist/quill.snow.css";
 function Demo() {
   const ref = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Quill | null>(null);
-  const [length, setLength] = useState(0);
-  const [range, setRange] = useState<RangeStatic | null>(null);
-  const [bounds, setBounds] = useState<any>(null);
   useEffect(() => {
     var toolbarOptions = [
       ["bold", "italic", "underline", "strike", "code"], // toggled buttons
@@ -34,37 +29,12 @@ function Demo() {
     ];
 
     if (ref.current && !editorRef.current) {
-      var options = {
-        debug: "info",
-        modules: {
-          toolbar: toolbarOptions,
-        },
-        placeholder: "点击输入...",
-        theme: "snow",
-        inline: true,
-      };
-      const editor = new Quill(ref.current, options);
-      editor.on("text-change", () =>
-        setLength(editor.getText().replace(/[\n\r]/g, "").length),
-      );
       // 用于标记是否触发了选择项变化事件，方向键处理时需要
       let triggeredChange = false;
-      editor.on("selection-change", range => {
-        console.warn("selection-change", range);
-        triggeredChange = true;
-        setRange(range);
-        if (range) {
-          setBounds(editor.getBounds(range.index, range.length));
-          if (range.length === 0) {
-            const leaf = editor.getLine(range.index);
-            console.log("leaf", leaf);
-            editor.getFormat(range.index, 1);
-          }
-        }
-      });
-
       // 重新设置格式
-      const resetFormat = (newFormat?: StringMap) => {
+      const resetFormat = (newFormat?: any) => {
+        const editor = editorRef.current
+        if (!editor) return
         const range = editor.getSelection();
         if (!range) return;
         const formats = editor.getFormat(range.index, 0);
@@ -80,7 +50,9 @@ function Demo() {
           });
         }
       };
-      editor.keyboard.addBinding({ key: "right" }, function (range, context) {
+      const onArrowRight = (range: any, context: any) => {
+        const editor = editorRef.current
+        if (!editor) return
         console.log("ArrowRight", range, context);
         try {
           if (range.length === 0 && range.index > 0) {
@@ -108,16 +80,20 @@ function Demo() {
           console.warn("arrowRight error", err);
         }
         return true;
-      });
+      };
 
-      const isCodeFormat = (range: RangeStatic) => {
+      const isCodeFormat = (range: any) => {
+        const editor = editorRef.current
+        if (!editor) return
         const formats = editor.getFormat(range);
         if (formats) {
           return !!formats.code;
         }
         return false;
       };
-      editor.keyboard.addBinding({ key: "left" }, function (range, context) {
+      const onArrowLeft = (range: any, context: any) => {
+        const editor = editorRef.current
+        if (!editor) return
         console.log("ArrowLeft", range, context);
         try {
           if (range.length === 0) {
@@ -160,6 +136,33 @@ function Demo() {
           console.warn("arrowLeft error", err);
         }
         return true;
+      };
+      var options = {
+        // debug: "info",
+        modules: {
+          toolbar: toolbarOptions,
+          keyboard: {
+            bindings: {
+              ArrowLeft: {
+                key: "ArrowLeft",
+                handler: onArrowLeft,
+              },
+              ArrowRight: {
+                key: "ArrowRight",
+                handler: onArrowRight,
+              },
+            },
+          },
+        },
+        placeholder: "点击输入...",
+        theme: "snow",
+        inline: true,
+      };
+      const editor = new Quill(ref.current, options);
+
+      editor.on("selection-change", range => {
+        console.warn("selection-change", range);
+        triggeredChange = true;
       });
       editorRef.current = editor;
       // @ts-ignore
@@ -167,103 +170,15 @@ function Demo() {
     }
   }, []);
 
-  const setContent = useCallback(() => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.setContents([
-        {
-          insert: "Hello Quill!",
-          attributes: {
-            bold: true,
-          },
-        },
-      ] as any);
-    }
-  }, []);
 
-  const insertText = useCallback(() => {
-    if (editorRef.current) {
-      const selection = editorRef.current.getSelection();
-      editorRef.current.insertText(selection?.index || 0, "Hello Quill!", {
-        bold: true,
-        italic: true,
-        underline: true,
-        strike: true,
-        color: "red",
-      });
-    }
-  }, []);
-  const updateContents = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.updateContents(
-        new Delta()
-          .retain(6)
-          .delete(5)
-          .insert("World")
-          .retain(1, { fontSize: "30px", color: "green" }),
-      );
-    }
-  }, []);
-  const setColor = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.format("color", "red");
-    }
-  }, []);
-  const setAlign = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.format("align", "right");
-    }
-  }, []);
-  const formatText = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.formatText(range?.index || 0, range?.length || 0, {
-        color: "red",
-        bold: true,
-        italic: true,
-        underline: true,
-        strike: true,
-        size: "large",
-      });
-    }
-  }, [range?.index, range?.length]);
-  const getFormat = useCallback(() => {
-    if (editorRef.current) {
-      alert(JSON.stringify(editorRef.current.getFormat()));
-    }
-  }, []);
-  const setSelection = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.setSelection(0, 7);
-    }
-  }, []);
   return (
     <div>
-      <Space wrap>
-        <Button
-          onClick={() => {
-            console.log(editorRef.current?.getContents());
-          }}
-        >
-          Get Contents
-        </Button>
-        <Button onClick={setContent}>Set Text</Button>
-        <Button onClick={insertText}>Insert Text</Button>
-        <Button onClick={updateContents}>Update Contents</Button>
-        <Button onClick={setColor}>Set Color</Button>
-        <Button onClick={setAlign}>Align Right</Button>
-        <Button onClick={formatText}>Format Text</Button>
-        <Button onClick={getFormat}>Get Format</Button>
-        <Button onClick={setSelection}>Set Selection</Button>
-      </Space>
       <div id="toolbar"></div>
       <div ref={ref}>
         <code>Quill:</code>由于这些限制，<code>Quill</code>
         <s>无法</s>
         支持任意的DOM树和HTML更改。但正如我们将看到的，这种结构提供的一致性和可预测性使我们能够轻松构建丰富的编辑体验。
       </div>
-      <div>字符数：{length}</div>
-      <div>选中项：{JSON.stringify(range)}</div>
-      <div>选中范围：{JSON.stringify(bounds)}</div>
     </div>
   );
 }
