@@ -1,9 +1,8 @@
+import { MouseEvent } from "react";
 import styled from "styled-components";
+import BubbleTool from "../BubbleTool";
 import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
-import BubbleTool from "./BubbleTool";
-import useEditor from "./hooks/useEditor";
-import { MouseEvent, useCallback } from "react";
 
 const EditorWrapper = styled.div`
   position: relative;
@@ -27,43 +26,27 @@ const BubbleWrapper = styled.div`
   }
 `;
 
-function Demo() {
-  const { ref, bubbleState, bubbleRef, getSelectedText } = useEditor();
-  const onImprove = useCallback(
-    (e: MouseEvent) => {
-      e.preventDefault()
-      console.warn("onImprove", getSelectedText());
-    },
-    [getSelectedText],
-  );
-  const onContinue = useCallback(
-    (e: MouseEvent) => {
-      e.preventDefault();
-      console.warn("onContinue", getSelectedText());
-    },
-    [getSelectedText],
-  );
-  const onTranslate = useCallback(
-    (e: MouseEvent) => {
-      e.preventDefault();
-      console.warn("onTranslate", getSelectedText());
-    },
-    [getSelectedText],
-  );
-  const onSimplify = useCallback(
-    (e: MouseEvent) => {
-      e.preventDefault();
-      console.warn("onSimplify", getSelectedText());
-    },
-    [getSelectedText],
-  );
-  const onExpand = useCallback(
-    (e: MouseEvent) => {
-      e.preventDefault();
-      console.warn("onExpand", getSelectedText());
-    },
-    [getSelectedText],
-  );
+interface Props {
+  wrapperRef: React.RefObject<HTMLDivElement>;
+  bubbleRef: React.RefObject<HTMLDivElement>;
+  bubbleState: { visible: boolean; x: number; y: number };
+  onImprove?: (e: MouseEvent) => void;
+  onContinue?: (e: MouseEvent) => void;
+  onTranslate?: (e: MouseEvent) => void;
+  onSimplify?: (e: MouseEvent) => void;
+  onExpand?: (e: MouseEvent) => void;
+}
+
+function Editor({
+  wrapperRef: ref,
+  bubbleRef,
+  bubbleState,
+  onImprove,
+  onContinue,
+  onTranslate,
+  onSimplify,
+  onExpand,
+}: Props) {
   return (
     <div style={{ boxShadow: "0 0 10px 0 rgba(0,0,0,0.1)" }}>
       <div id="toolbar">
@@ -97,4 +80,4 @@ function Demo() {
   );
 }
 
-export default Demo;
+export default Editor;

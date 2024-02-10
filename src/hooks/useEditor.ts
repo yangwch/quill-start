@@ -1,5 +1,5 @@
 import Quill, { RangeStatic, StringMap } from "quill";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import { calcBubblePosition } from "./service";
 export interface BubbleToolState {
   visible: boolean;
@@ -166,12 +166,70 @@ const useEditor = () => {
     }
     return "";
   }, []);
+  const onImprove = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onImprove", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onContinue = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onContinue", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onTranslate = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onTranslate", getSelectedText());
+    },
+    [getSelectedText],
+  );
+  const onSimplify = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onSimplify", getSelectedText());
+    },
+    [getSelectedText],
+  );
+
+  const onExpand = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+      console.warn("onExpand", getSelectedText());
+    },
+    [getSelectedText],
+  );
+
+  const onAppend = useCallback((text: string) => {
+    if (editorRef.current) {
+      const editor = editorRef.current;
+      // const selection = editor.getSelection();
+      // if (selection) {
+      //   editor.insertText(selection.index + selection.length, text);
+      // } else {
+      const contents = editor.getContents();
+      if (contents) {
+        contents.push({ insert: text });
+      }
+      editor.setContents(contents);
+      // }
+    }
+  }, []);
   return {
     editorRef,
     bubbleRef,
     ref,
     bubbleState,
     getSelectedText,
+    onImprove,
+    onContinue,
+    onTranslate,
+    onSimplify,
+    onExpand,
+    onAppend,
   };
 };
 
