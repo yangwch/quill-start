@@ -1,4 +1,4 @@
-import { Space } from "antd";
+import { Button, Space } from "antd";
 import React, { MouseEvent } from "react";
 
 interface Props {
@@ -11,14 +11,14 @@ interface Props {
 function Buttons(props: Props) {
   return (
     <Space style={{ fontSize: 12 }}>
-      <button onClick={props.onAdd}>+</button>
-      <button
+      <Button onClick={props.onAdd}>+</Button>
+      <Button
         onClick={props.onFavorite}
         style={{ color: props.isFavorite ? "red" : "black" }}
       >
         {props.isFavorite ? "★" : "☆"}
-      </button>
-      <button onClick={props.onRemove}>-</button>
+      </Button>
+      <Button onClick={props.onRemove}>-</Button>
     </Space>
   );
 }
