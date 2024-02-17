@@ -1,6 +1,5 @@
 import React, { MouseEvent } from "react";
-import { Space, Divider } from "@yangwch/y-components";
-import "@yangwch/y-components/dist/umd/main.css";
+import { Space, Divider } from "antd";
 
 function Button({
   children,

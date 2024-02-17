@@ -1,20 +1,22 @@
-import { Layout } from '@yangwch/y-components'
-import React from 'react'
+import { Layout } from "antd";
+import React from "react";
 
-function InternalLayout(props: { content: React.ReactNode, sider: React.ReactNode }) {
+function InternalLayout(props: {
+  content: React.ReactNode;
+  sider: React.ReactNode;
+  header: React.ReactNode;
+}) {
   return (
-    <Layout>
-      <Layout.Header>
-        I'm Header
-      </Layout.Header>
-      <Layout.Content>
-        {props.content}
-      </Layout.Content>
-      <Layout.Sider title='Results' style={{ width: 300 }}>
-        {props.sider}
-      </Layout.Sider>
+    <Layout style={{ height: '100%'}}>
+      <Layout.Header style={{ background: "#fff", textAlign: 'center' }} >{props.header}</Layout.Header>
+      <Layout>
+        <Layout.Content>{props.content}</Layout.Content>
+        <Layout.Sider width={300} title="Results" style={{ background: "#fff" }}>
+          {props.sider}
+        </Layout.Sider>
+      </Layout>
     </Layout>
-  )
+  );
 }
 
-export default InternalLayout
+export default InternalLayout;

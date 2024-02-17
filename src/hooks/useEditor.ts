@@ -1,6 +1,6 @@
 import Quill, { RangeStatic, StringMap } from "quill";
 import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
-import { calcBubblePosition } from "./service";
+import { calcBubblePosition } from "../services/bubble";
 export interface BubbleToolState {
   visible: boolean;
   x: number;
@@ -206,16 +206,11 @@ const useEditor = () => {
   const onAppend = useCallback((text: string) => {
     if (editorRef.current) {
       const editor = editorRef.current;
-      // const selection = editor.getSelection();
-      // if (selection) {
-      //   editor.insertText(selection.index + selection.length, text);
-      // } else {
       const contents = editor.getContents();
       if (contents) {
         contents.push({ insert: text });
       }
       editor.setContents(contents);
-      // }
     }
   }, []);
   return {

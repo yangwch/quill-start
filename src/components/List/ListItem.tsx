@@ -1,4 +1,4 @@
-import { Card } from "@yangwch/y-components";
+import { Card } from "antd";
 import React, { MouseEvent } from "react";
 import styled from "styled-components";
 import Buttons from "./Buttons";
@@ -29,10 +29,10 @@ function ListItem(props: Props) {
           onFavorite={() => onFavorite(id)}
         />
       }
-      bodyStyle={{ padding: 10 }}
-      style={{ marginBottom: 10}}
+      styles={{ body: { padding: 10 } }}
+      style={{ marginBottom: 10 }}
     >
-      <ContentWrapper>{text}</ContentWrapper>
+      <ContentWrapper><pre>{text}</pre></ContentWrapper>
     </Card>
   );
 }

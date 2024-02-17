@@ -1,4 +1,4 @@
-import { Space } from "@yangwch/y-components";
+import { Space } from "antd";
 import React, { MouseEvent } from "react";
 
 interface Props {

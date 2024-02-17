@@ -1,13 +1,9 @@
 import { MouseEvent } from "react";
 import ListItem from "./ListItem";
+import { ListItem as ListItemProps } from "../../hooks/useAi";
 
-export interface ListItem {
-  id: string;
-  text: string;
-  favorite: boolean;
-}
 interface Props {
-  list: ListItem[];
+  list: ListItemProps[];
   onAdd: (text: string) => void;
   onFavorite: (id: string) => void;
   onCopy?: (id: string, e: MouseEvent) => void;
