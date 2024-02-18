@@ -13,8 +13,9 @@ interface Props {
   onDelete?: (id: string, e: MouseEvent) => void;
 }
 
-const ContentWrapper = styled.div`
+const ContentWrapper = styled.pre`
   font-size: 14px;
+  white-space: pre-wrap;
 `;
 
 function ListItem(props: Props) {
@@ -32,7 +33,7 @@ function ListItem(props: Props) {
       styles={{ body: { padding: 10 } }}
       style={{ marginBottom: 10 }}
     >
-      <ContentWrapper><pre>{text}</pre></ContentWrapper>
+      <ContentWrapper>{text}</ContentWrapper>
     </Card>
   );
 }
