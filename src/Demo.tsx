@@ -69,7 +69,7 @@ function Demo() {
                 // 在code代码块的最左侧，取不到格式code:true
                 // 所以判断是否选中项有变化，如果选中项变化过，重新设置临界位置的格式
                 if (nextFormat.code && triggeredChange) {
-                  editor.format("code", true, "user");
+                  resetFormat(nextFormat);
                   triggeredChange = false;
                   return false;
                 }
@@ -169,6 +169,7 @@ function Demo() {
       window.editor = editor;
     }
   }, []);
+
 
   return (
     <div>
